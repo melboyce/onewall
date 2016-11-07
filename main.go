@@ -1,9 +1,10 @@
 package main
 
 import "flag"
-import "fmt"
+//import "fmt"
 import "io/ioutil"
 import "math/rand"
+import "os/exec"
 import "path/filepath"
 import "strings"
 import "time"
@@ -25,8 +26,6 @@ func main() {
 	}
 
 	bgs := strings.Split(string(fehbg), " ")
-	//stanza := strings.Join(bgs[:*numHeads-1], " ")
-	stanza := "#!/bin/sh\nfeh --bg-fill"
 	bgs = bgs[len(bgs)-*numHeads-1:]
 
 	if *pos > len(bgs) - 1 {
@@ -40,15 +39,22 @@ func main() {
     	panic(err)
 	}
 
-	wallList := " "
-	for i, f := range bgs {
-    	if i == *pos {
-        	wallList += "'" + walls[rand.Intn(len(walls))] + "'"
-    	} else {
-        	wallList += f
+	fehArgs := []string{"--bg-fill"}
+	for i, w := range bgs {
+    	w = strings.TrimSpace(w)
+    	if len(w) > 0 {
+        	if i == *pos {
+            	fehArgs = append(fehArgs, walls[rand.Intn(len(walls))])
+        	} else {
+            	fehArgs = append(fehArgs, strings.Replace(w, "'", "", -1))
+        	}
     	}
-    	wallList += " "
 	}
 
-	fmt.Println(stanza + wallList)
+	cmd := exec.Command("feh", fehArgs...)
+
+	err = cmd.Run()
+	if err != nil {
+    	panic(err)
+	}
 }
