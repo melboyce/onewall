@@ -4,10 +4,12 @@ import (
     "flag"
     "strings"
     "time"
+    "os"
 
     "io/ioutil"
     "math/rand"
     "os/exec"
+    "os/user"
     "path/filepath"
 )
 
@@ -16,13 +18,25 @@ func init() {
 }
 
 func main() {
-    pos := flag.Int("pos", 0, "position (head index)")
+    pos := flag.Int("pos", 0, "position (xinerama index)")
     dir := flag.String("dir", "", "directory to parse")
     heads := flag.Int("heads", 1, "number of heads")
 
     flag.Parse()
 
-    fehbg, err := ioutil.ReadFile("~/.fehbg")
+    if *dir == "" {
+        flag.PrintDefaults()
+        os.Exit(1)
+    }
+
+    usr, err := user.Current()
+    if err != nil {
+        panic(err)
+    }
+
+    // TODO handle non-existent .fehbg
+    fehpath := filepath.Join(usr.HomeDir, ".fehbg")
+    fehbg, err := ioutil.ReadFile(fehpath)
     if err != nil {
         panic(err)
     }
