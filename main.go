@@ -1,3 +1,6 @@
+// onewall updates a single wallpaper entry in a `.fehbg` file.
+// a wallpaper is chosen randomly from a supplied directory and
+// is applied to the monitor referenced by the `pos` argument.
 package main
 
 import (
@@ -13,6 +16,7 @@ import (
     "path/filepath"
 )
 
+// init the random seed
 func init() {
     rand.Seed(time.Now().UTC().UnixNano())
 }
