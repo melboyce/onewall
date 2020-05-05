@@ -5,6 +5,10 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -20,6 +24,9 @@ func init() {
 
 func main() {
 	pos := flag.Int("pos", 0, "position (xinerama index)")
+	landscape := flag.Bool("l", false, "only landscape images")
+	portrait := flag.Bool("p", false, "only portrait images")
+
 	flag.Usage = usage
 	flag.Parse()
 	if flag.NArg() < 1 {
@@ -58,7 +65,7 @@ func main() {
 		walls = append(walls, el)
 	}
 
-	nwall, err := getWall(dir)
+	nwall, err := getWall(dir, *landscape, *portrait)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cant get wall from %s: %v\n", dir, err)
 		os.Exit(4)
@@ -83,12 +90,35 @@ func main() {
 	os.Exit(0)
 }
 
-func getWall(d string) (string, error) {
+func getWall(d string, l, p bool) (string, error) {
 	walls, err := filepath.Glob(filepath.Join(d, "*"))
 	if err != nil {
 		return "", fmt.Errorf("cant get walls: %w", err)
 	}
-	return walls[rand.Intn(len(walls))], nil
+	rand.Shuffle(len(walls), func(i, j int) { walls[i], walls[j] = walls[j], walls[i] })
+	if !l && !p {
+		return walls[0], nil
+	}
+	for _, wall := range walls {
+		f, err := os.Open(wall)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "cant open file %s: %v\n", wall, err)
+			continue
+		}
+		defer f.Close()
+		img, _, err := image.DecodeConfig(f)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "cant decode image %s: %v\n", wall, err)
+			continue
+		}
+		if l && img.Width > img.Height {
+			return wall, nil
+		}
+		if p && img.Width < img.Height {
+			return wall, nil
+		}
+	}
+	return "", errors.New("bottomed out")
 }
 
 func getCmd(f *os.File) (string, error) {
