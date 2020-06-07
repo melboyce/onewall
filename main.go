@@ -33,7 +33,7 @@ func main() {
 		usage()
 		os.Exit(64)
 	}
-	dir := flag.Arg(0)
+	dirs := flag.Args()
 
 	user, err := user.Current()
 	if err != nil {
@@ -65,9 +65,9 @@ func main() {
 		walls = append(walls, el)
 	}
 
-	nwall, err := getWall(dir, *landscape, *portrait)
+	nwall, err := getWall(dirs, *landscape, *portrait)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "cant get wall from %s: %v\n", dir, err)
+		fmt.Fprintf(os.Stderr, "cant get wall from %s: %v\n", dirs, err)
 		os.Exit(4)
 	}
 
@@ -77,29 +77,33 @@ func main() {
 		walls[*pos] = nwall
 	}
 
-	args := []string{"--bg-fill"}
-	for _, wall := range walls {
-		args = append(args, wall)
-	}
-	cmd := exec.Command("feh", args...)
+	cmd := exec.Command("feh", "--bg-fill", walls...)
 	err = cmd.Run()
 	if err != nil {
+		fmt.Printf("%+v\n", args)
 		fmt.Fprintf(os.Stderr, "cant run feh: %v\n", err)
 		os.Exit(5)
 	}
 	os.Exit(0)
 }
 
-func getWall(d string, l, p bool) (string, error) {
-	walls, err := filepath.Glob(filepath.Join(d, "*"))
-	if err != nil {
-		return "", fmt.Errorf("cant get walls: %w", err)
+func getWall(dd []string, l, p bool) (string, error) {
+	walls := []string{}
+	for _, d := range dd {
+		ww, err := filepath.Glob(filepath.Join(d, "*"))
+		if err != nil {
+			return "", fmt.Errorf("cant get walls: %w", err)
+		}
+		walls = append(walls, ww...)
 	}
 	rand.Shuffle(len(walls), func(i, j int) { walls[i], walls[j] = walls[j], walls[i] })
-	if !l && !p {
-		return walls[0], nil
-	}
 	for _, wall := range walls {
+		ext := filepath.Ext(wall)
+		switch ext {
+		case ".jpg", ".jpeg", ".png", ".gif":
+		default:
+			continue
+		}
 		f, err := os.Open(wall)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "cant open file %s: %v\n", wall, err)
@@ -110,6 +114,9 @@ func getWall(d string, l, p bool) (string, error) {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "cant decode image %s: %v\n", wall, err)
 			continue
+		}
+		if !l && !p {
+			return wall, nil
 		}
 		if l && img.Width > img.Height {
 			return wall, nil
@@ -136,6 +143,6 @@ func getCmd(f *os.File) (string, error) {
 }
 
 func usage() {
-	fmt.Printf("usage: %s [-pos N] <directory>\n", os.Args[0])
+	fmt.Printf("usage: %s [-pos N] <dir> [<dir> <dir> ...]\n", os.Args[0])
 	flag.PrintDefaults()
 }
