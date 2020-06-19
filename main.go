@@ -77,10 +77,12 @@ func main() {
 		walls[*pos] = nwall
 	}
 
-	cmd := exec.Command("feh", "--bg-fill", walls...)
+	walls = append([]string{"--bg-fill"}, walls...)
+
+	cmd := exec.Command("feh", walls...)
 	err = cmd.Run()
 	if err != nil {
-		fmt.Printf("%+v\n", args)
+		fmt.Printf("%+v\n", walls)
 		fmt.Fprintf(os.Stderr, "cant run feh: %v\n", err)
 		os.Exit(5)
 	}
