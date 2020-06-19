@@ -145,6 +145,6 @@ func getCmd(f *os.File) (string, error) {
 }
 
 func usage() {
-	fmt.Printf("usage: %s [-pos N] <dir> [<dir> <dir> ...]\n", os.Args[0])
+	fmt.Printf("usage: %s [-pos N] [-l|-p] <dir> [<dir> <dir> ...]\n", os.Args[0])
 	flag.PrintDefaults()
 }
